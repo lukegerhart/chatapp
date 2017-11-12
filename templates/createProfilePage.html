@@ -1,0 +1,12 @@
+{%extends "layout.html"%}
+{%block title%}<title>Chatty Kathy</title>{%endblock%}
+{%block body%}
+<h1>{{title}}</h1>
+<form action="" method="post">
+	Username:  <input type="text" name="user" required/>
+	<br />
+	Password:  <input type="text" name="pass" required/>
+	<br />
+	<input type="submit" value="Create Account" />
+</form>
+{%endblock%}

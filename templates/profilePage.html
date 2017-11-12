@@ -1,0 +1,16 @@
+{%extends "layout.html"%}
+{%block title%}<title>{{user}}</title>{%endblock%}
+{%block body%}
+	<h1>Welcome, {{user}}</h1>
+	<form action="" method="post">
+		<div>
+			Sign up for an event: <input type="date" name="eventdate">
+			<br/>
+			Event Name:  <input type="text" name="eventname" required>
+			<br/>
+			<input type="submit">
+		</div>
+	</form>
+	<br/>
+	<a href="{{ url_for("unlogger") }}">click here to logout</a>
+{%endblock%}

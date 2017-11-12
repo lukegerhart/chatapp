@@ -1,0 +1,13 @@
+{%extends "layout.html"%}
+{%block title%}<title>Login</title>{%endblock%}
+{%block body%}
+	<h1>Please login</h1>
+	<form action="" method="post">
+		Username:  <input type="text" name="user" />
+		<br />
+		Password:  <input type="text" name="pass" />
+		<br />
+		<input type="submit" value="Login" />
+	</form>
+	<a href="{{ url_for("create_profile") }}">Create a new account</a>
+{%endblock%}
