@@ -4,13 +4,23 @@
 	<h1>Welcome, {{user}}</h1>
 	<form action="" method="post">
 		<div>
-			Sign up for an event: <input type="date" name="eventdate">
+			Chatroom Name:  <input type="text" name="create" required>
 			<br/>
-			Event Name:  <input type="text" name="eventname" required>
-			<br/>
-			<input type="submit">
+			<input type="submit" value="Create Chatroom">
 		</div>
 	</form>
+	<br/>
+	{% if chatrooms %}
+		{% for cr in chatrooms %}
+			<form action="" method = "post">
+				{{ cr.name }} <input type="hidden" name="join" value="{{cr.name}}">
+				<input type="submit" value="Join Chatroom">
+				<br/>
+			</form>
+		{% endfor %}
+	{% else %}
+		<p> There are no chatrooms available right now!</p>
+	{% endif %}
 	<br/>
 	<a href="{{ url_for("unlogger") }}">click here to logout</a>
 {%endblock%}

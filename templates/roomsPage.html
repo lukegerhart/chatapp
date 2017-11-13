@@ -1,0 +1,15 @@
+{%extends "layout.html"%}
+{% block body %}
+	<h1>Available Chatrooms</h1>
+	{% if chatrooms %}
+		{% for cr in chatrooms %}
+			<form action="" method = "post">
+				{{ cr.name }} <input type="hidden" name="join" value="{{cr.name}}">
+				<input type="submit" value="Join Chatroom">
+				<br/>
+			</form>
+		{% endfor %}
+	{% else %}
+		<p> There are no chatrooms available right now!</p>
+	{% endif %}
+{% endblock %}

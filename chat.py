@@ -21,6 +21,9 @@ class Chatroom(db.Model):
 	name = db.Column(db.String(80), primary_key=True)
 	creator_name = db.Column(db.String(80), db.ForeignKey('user.username'), nullable=False)
 	creator = db.relationship("User", backref=db.backref("chatrooms_created", lazy=True))
+	
+	def __repr__(self):
+		return self.name
 
 class Chatlog(db.Model):
 	
@@ -31,6 +34,7 @@ class Chatlog(db.Model):
 
 @app.cli.command()
 def initdb():
+	db.drop_all()
 	db.create_all()
 	#owner = User(username=owner_login, password=owner_pw, account_type='owner')
 	#db.session.add(owner) #hard code owner
@@ -96,46 +100,39 @@ def profile(username=None):
 		return redirect(url_for("logger"))
 	logged_in = "username" in session and session["username"] == username
 	if logged_in and request.method=="GET":
-		return render_template('profilePage.html', user=username)			
-	elif logged_in and request.method == "POST" and "cancel" in request.form:
-		#delete from database
-		event = Event.query.filter_by(date=request.form["cancel"]).first()
-		db.session.delete(event)
-		db.session.commit()
-		flash("Event on " + request.form["cancel"] + " deleted!")
-		return redirect(url_for("profile", username=username))
-	elif logged_in and request.method == "POST" and "work" in request.form:
-		#add to EventStaff table
-		event_date = request.form["work"]
-		#first query User objet that represents this staff
-		staff = User.query.filter_by(username=username).first()
-		#create EventStaff object
-		event = EventStaff(date=event_date, staff_name=username, staffer=staff)
-		db.session.add(event)
+		return render_template('profilePage.html', user=username, chatrooms=get_chatrooms())			
+	elif logged_in and request.method == "POST" and "create" in request.form:
+		new_chatroom_name = request.form["create"]
+		chatroom = Chatroom(name=new_chatroom_name, creator_name=session["username"])
+		db.session.add(chatroom)
 		try:
 			db.session.commit()
-			flash("You have successfully signed up for this event")
+			flash("Chatroom created!")
 		except:
-			flash("Something went wrong")
+			flash("Something went wrong!")
 		return redirect(url_for("profile", username=username))
-	elif logged_in and request.method == "POST":
-		event_date = request.form["eventdate"]
-		event_name = request.form["eventname"]
-		#get user object from db
-		user = User.query.filter_by(username=username).first()
-		#make Event object
-		event = Event(date=event_date, name=event_name, requester_name=username, requester=user)
-		db.session.add(event)
-		try:
-			db.session.commit()
-			flash("Event successfully scheduled!")
-			return redirect(url_for("profile", username=username))
-		except IntegrityError:
-			db.session.rollback()
-			flash("Sorry, we are already booked for that date")
-			return redirect(url_for("profile", username=username))
+	elif logged_in and request.method == "POST" and "join" in request.form:
+		chatroom_name = request.form["join"]
+		chatroom = Chatroom.query.filter_by(name=chatroom_name).first()
+		return redirect(url_for("rooms", chatroom=chatroom))
 	else:
 		abort(401)
+
+@app.route("/rooms/", methods=["GET", "POST"])
+@app.route("/rooms/<chatroom>", methods=["GET", "POST"])
+def rooms(chatroom=None):
+	logged_in = "username" in session
+	if not logged_in:
+		return redirect(url_for("logger"))
+	elif request.method == "POST" and "join" in request.form:
+		#join chatroom
+		chatroom_name = request.form["join"]
+		chatroom_tojoin = Chatroom.query.filter_by(name=chatroom_name).first()
+		return redirect(url_for("rooms", chatroom=chatroom_tojoin))
+	elif chatroom is None:
+		return render_template("roomsPage.html", chatrooms=get_chatrooms())
+	elif chatroom is not None:
+		return render_template("roomPage.html", chatroom=chatroom)
 #Helper functions
 def create_account(new_username, new_password):
 	new_user = User(username=new_username, password=new_password)
@@ -147,4 +144,6 @@ def create_account(new_username, new_password):
 		return "Duplicate"
 	return None
 
+def get_chatrooms():
+	return Chatroom.query.all()
 app.secret_key = urandom(24)
