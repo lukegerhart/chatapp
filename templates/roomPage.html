@@ -1,14 +1,29 @@
 {%extends "layout.html"%}
 {% block head %}
 	<script src="{{url_for("static", filename="chatroom.js")}}"></script>
+	<link rel="stylesheet", href="{{url_for("static", filename="style.css")}}", type="text/css"/>
+	<link rel="stylesheet", href="{{url_for("static", filename="roomPageStyle.css")}}", type="text/css"/>
 	<title>{{chatroom}}</title>
 {% endblock %}
 {% block body %}
-	<h1>{{chatroom}}</h1>
-	<form action="" method = "post">
-		<input type="hidden" name="leave" value="{{chatroom.name}}">
-			<input type="submit" value="Leave Chatroom">
-		<br/>
-	</form>
-	<a href="{{ url_for("unlogger") }}">click here to logout</a>
+	<div>
+		<div id="container">
+			<h1 class="text-center">{{chatroom}}</h1>
+			<div id="chatbox">
+				<div id="history">
+					
+				</div>
+				<textarea placeholder="Type here..." id="typing"></textarea>
+				
+			</div>
+			<form action="" method = "post" class="text-center">
+				<input type="hidden" name="leave" value="{{chatroom.name}}">
+					<input type="submit" value="Leave Chatroom">
+				<br/>
+			</form>
+			<div class="text-center">
+				<a href="{{ url_for("unlogger") }}">click here to logout</a>
+			</div>
+		</div>
+	</div>
 {% endblock %}

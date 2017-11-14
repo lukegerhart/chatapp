@@ -1,0 +1,23 @@
+#history {
+	overflow-y: scroll;
+	margin:auto;
+	border: solid 1px grey;
+	height: 80%;
+	width: 100%;
+}
+
+#typing {
+	width: 100%;
+	height: 15%;
+	margin: 0px;
+	padding: 0px;
+	border: solid 1px grey;
+	resize: none;
+}
+
+#chatbox {
+	height: 500px;
+	width: 300px;
+	margin:auto;
+	resize:both;
+}
