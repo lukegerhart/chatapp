@@ -1,5 +1,10 @@
 {%extends "layout.html"%}
 {% block body %}
 	<h1>{{chatroom}}</h1>
-	
+	<form action="" method = "post">
+		<input type="hidden" name="leave" value="{{chatroom.name}}">
+			<input type="submit" value="Leave Chatroom">
+		<br/>
+	</form>
+	<a href="{{ url_for("unlogger") }}">click here to logout</a>
 {% endblock %}

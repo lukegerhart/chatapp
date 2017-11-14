@@ -12,11 +12,18 @@
 	<br/>
 	{% if chatrooms %}
 		{% for cr in chatrooms %}
+			<h3>{{ cr.name }}</h3>
 			<form action="" method = "post">
-				{{ cr.name }} <input type="hidden" name="join" value="{{cr.name}}">
+				<input type="hidden" name="join" value="{{cr.name}}">
 				<input type="submit" value="Join Chatroom">
-				<br/>
 			</form>
+			{% if cr.creator_name == user %}
+				<form action="" method = "post">
+					<input type="hidden" name="delete" value="{{cr.name}}">
+					<input type="submit" value="Delete Chatroom">
+				</form>
+			{% endif %}
+			<br/>
 		{% endfor %}
 	{% else %}
 		<p> There are no chatrooms available right now!</p>

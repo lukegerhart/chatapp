@@ -36,8 +36,6 @@ class Chatlog(db.Model):
 def initdb():
 	db.drop_all()
 	db.create_all()
-	#owner = User(username=owner_login, password=owner_pw, account_type='owner')
-	#db.session.add(owner) #hard code owner
 	db.session.commit()
 
 @app.route('/')
@@ -90,7 +88,7 @@ def create_profile():
 		flash("Your account has been created successfully")
 		return redirect(url_for("profile", username=request.form["user"]))
 	else:
-		return render_template("createProfilePage.html", title="Become A Customer")
+		return render_template("createProfilePage.html", title="Sign Up For an Account")
 
 @app.route("/profile/")
 @app.route("/profile/<username>", methods=["GET", "POST"])
@@ -115,6 +113,16 @@ def profile(username=None):
 		chatroom_name = request.form["join"]
 		chatroom = Chatroom.query.filter_by(name=chatroom_name).first()
 		return redirect(url_for("rooms", chatroom=chatroom))
+	elif logged_in and request.method == "POST" and "delete" in request.form:
+		to_del_name = request.form["delete"]
+		chatroom = Chatroom.query.filter_by(name=to_del_name).first()
+		db.session.delete(chatroom)
+		try:
+			db.session.commit()
+			flash("Chatroom deleted!")
+		except:
+			flash("Something went wrong, please try again!")
+		return redirect(url_for("profile", username=username))
 	else:
 		abort(401)
 
@@ -129,11 +137,15 @@ def rooms(chatroom=None):
 		chatroom_name = request.form["join"]
 		chatroom_tojoin = Chatroom.query.filter_by(name=chatroom_name).first()
 		return redirect(url_for("rooms", chatroom=chatroom_tojoin))
+	elif request.method == "POST" and "leave" in request.form:
+		return redirect(url_for("profile", username=session["username"]))
 	elif chatroom is None:
 		return render_template("roomsPage.html", chatrooms=get_chatrooms())
 	elif chatroom is not None:
 		return render_template("roomPage.html", chatroom=chatroom)
-#Helper functions
+
+#Helper functions#
+
 def create_account(new_username, new_password):
 	new_user = User(username=new_username, password=new_password)
 	db.session.add(new_user)
@@ -146,4 +158,5 @@ def create_account(new_username, new_password):
 
 def get_chatrooms():
 	return Chatroom.query.all()
+
 app.secret_key = urandom(24)
