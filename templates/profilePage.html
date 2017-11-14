@@ -1,5 +1,7 @@
 {%extends "layout.html"%}
-{%block title%}<title>{{user}}</title>{%endblock%}
+{%block head%}
+	<title>{{user}}</title>
+{%endblock%}
 {%block body%}
 	<h1>Welcome, {{user}}</h1>
 	<form action="" method="post">

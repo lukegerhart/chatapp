@@ -1,4 +1,8 @@
 {%extends "layout.html"%}
+{% block head %}
+	<script src="{{url_for("static", filename="chatroom.js")}}"></script>
+	<title>{{chatroom}}</title>
+{% endblock %}
 {% block body %}
 	<h1>{{chatroom}}</h1>
 	<form action="" method = "post">
