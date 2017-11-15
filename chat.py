@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, render_template, request, session, abort, flash
+from flask import Flask, redirect, url_for, render_template, request, session, abort, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import *
@@ -30,7 +30,7 @@ class Chatlog(db.Model):
 	chatroom_name = db.Column(db.String(80), db.ForeignKey("chatroom.name"), nullable=False, primary_key=True)
 	sender = db.Column(db.String(80), db.ForeignKey("user.username"), nullable=False, primary_key=True)
 	message = db.Column(db.Text, nullable=False)
-	timestamp = db.Column(db.DateTime, nullable=False, primary_key=True)
+	#timestamp = db.Column(db.DateTime, nullable=False, primary_key=True)
 
 @app.cli.command()
 def initdb():
@@ -143,6 +143,19 @@ def rooms(chatroom=None):
 		return render_template("roomsPage.html", chatrooms=get_chatrooms())
 	elif chatroom is not None:
 		return render_template("roomPage.html", chatroom=chatroom)
+
+#AJAX Methods#
+@app.route("/get_new_mesages/")
+def get_new_messages():
+	pass
+
+@app.route("/get_messages/<chatroom>")
+def get_messages(chatroom=None):
+	if chatroom:
+		#cr = Chatroom.query.filter_by(name=str(chatroom)).first()
+		chat_history = Chatlog.query.filter_by(chatroom_name=chatroom).all()
+		print(chat_history)
+	return jsonify(text=chatroom)
 
 #Helper functions#
 
