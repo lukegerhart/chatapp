@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import *
 from os import urandom
 from datetime import datetime
+import time
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False #to suppress some warning that popped up
@@ -123,6 +124,10 @@ def profile(username=None):
 	elif logged_in and request.method == "POST" and "join" in request.form:
 		chatroom_name = request.form["join"]
 		chatroom = Chatroom.query.filter_by(name=chatroom_name).first()
+		if "chatroom" in session:
+			flash("You are already in a chatroom!")
+			return redirect(url_for("profile", username=username))
+		session["chatroom"] = chatroom_name
 		return redirect(url_for("rooms", chatroom=chatroom))
 	elif logged_in and request.method == "POST" and "delete" in request.form:
 		to_del_name = request.form["delete"]
@@ -147,8 +152,13 @@ def rooms(chatroom=None):
 		#join chatroom
 		chatroom_name = request.form["join"]
 		chatroom_tojoin = Chatroom.query.filter_by(name=chatroom_name).first()
+		if "chatroom" in session:
+			flash("You are already in a chatroom!")
+			return redirect(url_for("rooms"))
+		session["chatroom"] = chatroom
 		return redirect(url_for("rooms", chatroom=chatroom_tojoin))
 	elif request.method == "POST" and "leave" in request.form:
+		del session["chatroom"]
 		return redirect(url_for("profile", username=session["username"]))
 	elif chatroom is None:
 		return render_template("roomsPage.html", chatrooms=get_chatrooms())
