@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import *
 from os import urandom
+from datetime import datetime
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False #to suppress some warning that popped up
@@ -30,12 +31,22 @@ class Chatlog(db.Model):
 	chatroom_name = db.Column(db.String(80), db.ForeignKey("chatroom.name"), nullable=False, primary_key=True)
 	sender = db.Column(db.String(80), db.ForeignKey("user.username"), nullable=False, primary_key=True)
 	message = db.Column(db.Text, nullable=False)
-	#timestamp = db.Column(db.DateTime, nullable=False, primary_key=True)
+	timestamp = db.Column(db.DateTime, nullable=False, primary_key=True)
 
 @app.cli.command()
 def initdb():
 	db.drop_all()
 	db.create_all()
+	bob = User(username="bob", password="bob")
+	poe = User(username="poe", password="poe")
+	db.session.add(bob)
+	db.session.add(poe)
+	chatroom = Chatroom(name="bobsroom", creator_name="bob")
+	message = Chatlog(chatroom_name="bobsroom", sender="poe", message="test text", timestamp=datetime.now())
+	db.session.add(chatroom)
+	db.session.add(message)
+	message = Chatlog(chatroom_name="bobsroom", sender="bob", message="hi this is bob", timestamp=datetime.now())
+	db.session.add(message)
 	db.session.commit()
 
 @app.route('/')
@@ -155,7 +166,13 @@ def get_messages(chatroom=None):
 		#cr = Chatroom.query.filter_by(name=str(chatroom)).first()
 		chat_history = Chatlog.query.filter_by(chatroom_name=chatroom).all()
 		print(chat_history)
-	return jsonify(text=chatroom)
+		messages = []
+		message_dict = {}
+		for message in chat_history:
+			message_dict = {"sender":message.sender, "text":message.message, "time":message.timestamp}
+			messages.append(message_dict)
+		print(messages)
+	return jsonify(messages)
 
 #Helper functions#
 
