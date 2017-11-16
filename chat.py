@@ -121,7 +121,7 @@ def profile(username=None):
 	elif logged_in and request.method == "POST" and "join" in request.form:
 		chatroom_name = request.form["join"]
 		currently_in = User.query.filter_by(username=username).first()
-		if currently_in.current_room and currently_in.current_room != chatroom_name:
+		if currently_in.current_room is not None and currently_in.current_room != chatroom_name:
 			flash("You are already in a chatroom!")
 			return redirect(url_for("profile", username=username))
 		currently_in.current_room = chatroom_name
@@ -134,9 +134,11 @@ def profile(username=None):
 		db.session.delete(chatroom)
 		try:
 			db.session.commit()
-			user = User.query.filter_by(username=username).first()
-			user.current_room = None
-			db.session.commit()
+			users = User.query.all()
+			for user in users:
+				if user.current_room == to_del_name:
+					user.current_room = None
+					db.session.commit()
 			flash("Chatroom deleted!")
 		except:
 			flash("Something went wrong, please try again!")
@@ -155,7 +157,7 @@ def rooms(chatroom=None):
 		chatroom_name = request.form["join"]
 		chatroom_tojoin = Chatroom.query.filter_by(name=chatroom_name).first()
 		currently_in = User.query.filter_by(username=session["username"]).first()
-		if currently_in.current_room and currently_in.current_room != chatroom_tojoin:
+		if currently_in.current_room is not None and currently_in.current_room != chatroom_tojoin:
 			flash("You are already in a chatroom!")
 			return redirect(url_for("profile", username=username))
 		currently_in.current_room = chatroom_name
