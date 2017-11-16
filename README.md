@@ -12,3 +12,13 @@ Pitt ID: lag115
 ## Running the App
 
 Once installed, the application can be started with `flask run`.
+
+## Grading Notes
+
+The database is initialized with nothing in it, so create an account before loggin in.
+
+Once in a chatroom, press enter to post a new message to the room.
+
+I tested the app by logging in on Chrome and Firefox at the same time.
+
+If you want, you can run the app with a host name to test it on a local network and have different machines log in. (`flask run --host=0.0.0.0`)
