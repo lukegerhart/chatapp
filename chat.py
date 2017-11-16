@@ -175,23 +175,16 @@ def rooms(chatroom=None):
 		return render_template("roomPage.html", chatroom=chatroom)
 
 #AJAX Methods#
-@app.route("/get_new_mesages/")
-def get_new_messages():
-	pass
 
 @app.route("/get_messages/<chatroom>")
 def get_messages(chatroom=None):
 	if chatroom:
-		#cr = Chatroom.query.filter_by(name=str(chatroom)).first()
-		#chat_history = Chatlog.query.filter_by(chatroom_name=chatroom).all()
 		chat_history = Chatlog.query.order_by(Chatlog.timestamp).filter_by(chatroom_name=chatroom).all()
-		print(chat_history)
 		messages = []
 		message_dict = {}
 		for message in chat_history:
 			message_dict = {"sender":message.sender, "text":message.message, "time":message.timestamp}
 			messages.append(message_dict)
-		#print(messages)
 	return jsonify(messages)
 
 @app.route("/post_message/", methods=["POST"])
@@ -203,7 +196,6 @@ def post_message():
 	new_message = Chatlog(chatroom_name=chatroom, sender=sender, message=message, timestamp=timestamp)
 	db.session.add(new_message)
 	db.session.commit()
-	print(message)
 	return jsonify(sender)
 	
 

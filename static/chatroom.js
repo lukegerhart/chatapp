@@ -1,32 +1,19 @@
-function parseJsonResponse(jsonResponse, element) {
+function parseJsonResponse(jsonResponse) {
 	var displayHtml = "";
-	//var messages = []
 	for (var key in jsonResponse) {
 		if (jsonResponse.hasOwnProperty(key)) {
 			displayHtml += ("<p>"+jsonResponse[key]["sender"]+ ": "+jsonResponse[key]["text"]+"</p>");
-			//console.log(displayHtml);
-			//messages.push(displayHtml);
-		}
-	}
-	//displayHtml = "";
-	//while (messages.length > 0) {
-		//displayHtml += messages.pop();
-	//}
-	return displayHtml;
-	/*for (var key in jsonResponse) {
-		if (jsonResponse.hasOwnProperty(key)) {
-			var pMessage = document.createElement("p");
 			
 		}
-	}*/
+	}
+	return displayHtml;
+	
 }
-
-window.onload = function() {
-	
-	var chatHistory = document.getElementById("history");
-	var req = new XMLHttpRequest(); 
-	
+function getMessages() {
+	chatHistory = document.getElementById("history");
 	var headerText = document.getElementById("header").innerHTML;
+	
+	var req = new XMLHttpRequest(); 
 	req.open("GET", "/get_messages/"+headerText);
 	req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 	req.onreadystatechange = function() {
@@ -37,7 +24,7 @@ window.onload = function() {
 				//error handling code here
 			} else {
 				var response = JSON.parse(req.responseText);
-				chatHistory.innerHTML = parseJsonResponse(response, chatHistory);
+				chatHistory.innerHTML = parseJsonResponse(response);
 				chatHistory.scrollTop = chatHistory.scrollHeight;
 			}
 		}
@@ -46,15 +33,18 @@ window.onload = function() {
 	req.send();
 	return false;
 }
+window.onload = getMessages;
 
 function sendMessage(e) {
 	var key = e.keyCode || e.which;
 	if (key == 13) {
+		
 		txtArea = document.getElementById("typing")
 		message = txtArea.value;
 		txtArea.value = "";
-		event.preventDefault();
+		e.preventDefault();
 		txtArea.focus();
+		
 		var req = new XMLHttpRequest();
 		req.open("POST", "/post_message/");
 		req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
@@ -66,9 +56,7 @@ function sendMessage(e) {
 					//error handling code here
 				} else {
 					var response = JSON.parse(req.responseText);
-					console.log(response);
 					var history = document.getElementById("history");
-					var pNodes = history.innerText
 					history.innerHTML = history.innerHTML + ("<p>"+response+": "+message+"</p>");
 					history.scrollTop = history.scrollHeight;
 				}
@@ -78,3 +66,5 @@ function sendMessage(e) {
 		req.send(postVars);
 	}
 }
+
+window.setInterval(getMessages, 1000);
