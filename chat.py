@@ -29,10 +29,11 @@ class Chatroom(db.Model):
 
 class Chatlog(db.Model):
 	
-	chatroom_name = db.Column(db.String(80), db.ForeignKey("chatroom.name"), nullable=False, primary_key=True)
+	chatroom_name = db.Column(db.String(80), db.ForeignKey("chatroom.name", ondelete="cascade"), nullable=False, primary_key=True)
 	sender = db.Column(db.String(80), db.ForeignKey("user.username"), nullable=False, primary_key=True)
 	message = db.Column(db.Text, nullable=False)
 	timestamp = db.Column(db.DateTime, nullable=False, primary_key=True)
+	chatroom = db.relationship("Chatroom", backref=db.backref("log", cascade="all, delete-orphan"))
 	
 	def __repr__(self):
 		return self.sender + ": " + self.message + " at " + str(self.timestamp)
@@ -179,6 +180,9 @@ def rooms(chatroom=None):
 @app.route("/get_messages/<chatroom>")
 def get_messages(chatroom=None):
 	if chatroom:
+		#check if room was deleted
+		#room = Chatroom.query.filter_by(name=chatroom).all()
+		
 		chat_history = Chatlog.query.order_by(Chatlog.timestamp).filter_by(chatroom_name=chatroom).all()
 		messages = []
 		message_dict = {}
