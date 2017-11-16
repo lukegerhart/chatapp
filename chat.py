@@ -14,15 +14,15 @@ class User(db.Model):
 
 	username = db.Column(db.String(80), primary_key=True)
 	password = db.Column(db.String(80), nullable=False)
-	
+	current_room = db.Column(db.String(80), db.ForeignKey("chatroom.name"), nullable=True)
+
 	def __repr__(self):
 		return self.username
 
 class Chatroom(db.Model):
 	
 	name = db.Column(db.String(80), primary_key=True)
-	creator_name = db.Column(db.String(80), db.ForeignKey('user.username'), nullable=False)
-	creator = db.relationship("User", backref=db.backref("chatrooms_created", lazy=True))
+	creator_name = db.Column(db.String(80), db.ForeignKey('user.username', use_alter=True), nullable=False)
 	
 	def __repr__(self):
 		return self.name
@@ -37,24 +37,11 @@ class Chatlog(db.Model):
 	
 	def __repr__(self):
 		return self.sender + ": " + self.message + " at " + str(self.timestamp)
+
 @app.cli.command()
 def initdb():
 	db.drop_all()
 	db.create_all()
-	bob = User(username="bob", password="bob")
-	poe = User(username="poe", password="poe")
-	db.session.add(bob)
-	db.session.add(poe)
-	chatroom = Chatroom(name="bobsroom", creator_name="bob")
-	message = Chatlog(chatroom_name="bobsroom", sender="poe", message="test text", timestamp=datetime.now())
-	db.session.add(chatroom)
-	db.session.add(message)
-	message = Chatlog(chatroom_name="bobsroom", sender="bob", message="hi this is bob", timestamp=datetime.now())
-	db.session.add(message)
-	chatroom = Chatroom(name="poesroom", creator_name="poe")
-	db.session.add(chatroom)
-	message = Chatlog(chatroom_name="poesroom", sender="poe", message="message in poes", timestamp=datetime.now())
-	db.session.add(message)
 	db.session.commit()
 
 @app.route('/')
@@ -87,6 +74,7 @@ def unlogger():
 	# if logged in, log out, otherwise offer to log in
 	if "username" in session:
 		# note, here were calling the .clear() method for the python dictionary builtin
+		leave_room(session["username"])
 		session.clear()
 		return render_template("logoutPage.html")
 	else:
@@ -130,17 +118,22 @@ def profile(username=None):
 		return redirect(url_for("profile", username=username))
 	elif logged_in and request.method == "POST" and "join" in request.form:
 		chatroom_name = request.form["join"]
-		chatroom = Chatroom.query.filter_by(name=chatroom_name).first()
-		if "chatroom" in session and session["chatroom"] != chatroom_name:
+		currently_in = User.query.filter_by(username=username).first()
+		if currently_in.current_room:
 			flash("You are already in a chatroom!")
 			return redirect(url_for("profile", username=username))
-		session["chatroom"] = chatroom_name
+		currently_in.current_room = chatroom_name
+		db.session.commit();
+		chatroom = Chatroom.query.filter_by(name=chatroom_name).first()
 		return redirect(url_for("rooms", chatroom=chatroom))
 	elif logged_in and request.method == "POST" and "delete" in request.form:
 		to_del_name = request.form["delete"]
 		chatroom = Chatroom.query.filter_by(name=to_del_name).first()
 		db.session.delete(chatroom)
 		try:
+			db.session.commit()
+			user = User.query.filter_by(username=username).first()
+			user.current_room = None
 			db.session.commit()
 			flash("Chatroom deleted!")
 		except:
@@ -159,16 +152,15 @@ def rooms(chatroom=None):
 		#join chatroom
 		chatroom_name = request.form["join"]
 		chatroom_tojoin = Chatroom.query.filter_by(name=chatroom_name).first()
-		if "chatroom" in session and session["chatroom"] != chatroom:
+		currently_in = User.query.filter_by(username=session["username"]).first()
+		if currently_in.current_room:
 			flash("You are already in a chatroom!")
-			return redirect(url_for("rooms"))
-		session["chatroom"] = chatroom
+			return redirect(url_for("profile", username=username))
+		currently_in.current_room = chatroom_name
+		db.session.commit();
 		return redirect(url_for("rooms", chatroom=chatroom_tojoin))
 	elif request.method == "POST" and "leave" in request.form:
-		try:
-			del session["chatroom"]
-		except KeyError:
-			pass
+		leave_room(session["username"])
 		return redirect(url_for("profile", username=session["username"]))
 	elif chatroom is None:
 		return render_template("roomsPage.html", chatrooms=get_chatrooms())
@@ -219,5 +211,10 @@ def create_account(new_username, new_password):
 
 def get_chatrooms():
 	return Chatroom.query.all()
+
+def leave_room(username):
+	currently_in = User.query.filter_by(username=username).first()
+	currently_in.current_room = None
+	db.session.commit()
 
 app.secret_key = urandom(24)
