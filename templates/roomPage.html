@@ -11,9 +11,8 @@
 			<h1 class="text-center" id="header">{{chatroom}}</h1>
 			<div id="chatbox">
 				<div id="history">
-					
 				</div>
-				<textarea placeholder="Type here..." id="typing"></textarea>
+				<textarea placeholder="Type here..." id="typing" onKeydown="sendMessage(event);"></textarea>
 				
 			</div>
 			<form action="" method = "post" class="text-center">

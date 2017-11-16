@@ -33,7 +33,9 @@ class Chatlog(db.Model):
 	sender = db.Column(db.String(80), db.ForeignKey("user.username"), nullable=False, primary_key=True)
 	message = db.Column(db.Text, nullable=False)
 	timestamp = db.Column(db.DateTime, nullable=False, primary_key=True)
-
+	
+	def __repr__(self):
+		return self.sender + ": " + self.message + " at " + str(self.timestamp)
 @app.cli.command()
 def initdb():
 	db.drop_all()
@@ -47,6 +49,10 @@ def initdb():
 	db.session.add(chatroom)
 	db.session.add(message)
 	message = Chatlog(chatroom_name="bobsroom", sender="bob", message="hi this is bob", timestamp=datetime.now())
+	db.session.add(message)
+	chatroom = Chatroom(name="poesroom", creator_name="poe")
+	db.session.add(chatroom)
+	message = Chatlog(chatroom_name="poesroom", sender="poe", message="message in poes", timestamp=datetime.now())
 	db.session.add(message)
 	db.session.commit()
 
@@ -124,7 +130,7 @@ def profile(username=None):
 	elif logged_in and request.method == "POST" and "join" in request.form:
 		chatroom_name = request.form["join"]
 		chatroom = Chatroom.query.filter_by(name=chatroom_name).first()
-		if "chatroom" in session:
+		if "chatroom" in session and session["chatroom"] != chatroom_name:
 			flash("You are already in a chatroom!")
 			return redirect(url_for("profile", username=username))
 		session["chatroom"] = chatroom_name
@@ -152,13 +158,16 @@ def rooms(chatroom=None):
 		#join chatroom
 		chatroom_name = request.form["join"]
 		chatroom_tojoin = Chatroom.query.filter_by(name=chatroom_name).first()
-		if "chatroom" in session:
+		if "chatroom" in session and session["chatroom"] != chatroom:
 			flash("You are already in a chatroom!")
 			return redirect(url_for("rooms"))
 		session["chatroom"] = chatroom
 		return redirect(url_for("rooms", chatroom=chatroom_tojoin))
 	elif request.method == "POST" and "leave" in request.form:
-		del session["chatroom"]
+		try:
+			del session["chatroom"]
+		except KeyError:
+			pass
 		return redirect(url_for("profile", username=session["username"]))
 	elif chatroom is None:
 		return render_template("roomsPage.html", chatrooms=get_chatrooms())
@@ -174,15 +183,29 @@ def get_new_messages():
 def get_messages(chatroom=None):
 	if chatroom:
 		#cr = Chatroom.query.filter_by(name=str(chatroom)).first()
-		chat_history = Chatlog.query.filter_by(chatroom_name=chatroom).all()
+		#chat_history = Chatlog.query.filter_by(chatroom_name=chatroom).all()
+		chat_history = Chatlog.query.order_by(Chatlog.timestamp).filter_by(chatroom_name=chatroom).all()
 		print(chat_history)
 		messages = []
 		message_dict = {}
 		for message in chat_history:
 			message_dict = {"sender":message.sender, "text":message.message, "time":message.timestamp}
 			messages.append(message_dict)
-		print(messages)
+		#print(messages)
 	return jsonify(messages)
+
+@app.route("/post_message/", methods=["POST"])
+def post_message():
+	timestamp = datetime.now()
+	message = request.form["message"]
+	chatroom = request.form["chatroom"]
+	sender = session["username"]
+	new_message = Chatlog(chatroom_name=chatroom, sender=sender, message=message, timestamp=timestamp)
+	db.session.add(new_message)
+	db.session.commit()
+	print(message)
+	return jsonify(sender)
+	
 
 #Helper functions#
 
