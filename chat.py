@@ -14,6 +14,7 @@ class User(db.Model):
 
 	username = db.Column(db.String(80), primary_key=True)
 	password = db.Column(db.String(80), nullable=False)
+	#save the chatroom the user is in currently in db so its the same across different sessions
 	current_room = db.Column(db.String(80), db.ForeignKey("chatroom.name"), nullable=True)
 
 	def __repr__(self):
@@ -23,6 +24,7 @@ class Chatroom(db.Model):
 	
 	name = db.Column(db.String(80), primary_key=True)
 	creator_name = db.Column(db.String(80), db.ForeignKey('user.username', use_alter=True), nullable=False)
+	most_recent_poll = db.Column(db.DateTime)
 	
 	def __repr__(self):
 		return self.name
@@ -108,7 +110,7 @@ def profile(username=None):
 		return render_template('profilePage.html', user=username, chatrooms=get_chatrooms())			
 	elif logged_in and request.method == "POST" and "create" in request.form:
 		new_chatroom_name = request.form["create"]
-		chatroom = Chatroom(name=new_chatroom_name, creator_name=session["username"])
+		chatroom = Chatroom(name=new_chatroom_name, creator_name=session["username"], most_recent_poll=datetime.now())
 		db.session.add(chatroom)
 		try:
 			db.session.commit()
@@ -119,7 +121,7 @@ def profile(username=None):
 	elif logged_in and request.method == "POST" and "join" in request.form:
 		chatroom_name = request.form["join"]
 		currently_in = User.query.filter_by(username=username).first()
-		if currently_in.current_room:
+		if currently_in.current_room and currently_in.current_room != chatroom_name:
 			flash("You are already in a chatroom!")
 			return redirect(url_for("profile", username=username))
 		currently_in.current_room = chatroom_name
@@ -153,7 +155,7 @@ def rooms(chatroom=None):
 		chatroom_name = request.form["join"]
 		chatroom_tojoin = Chatroom.query.filter_by(name=chatroom_name).first()
 		currently_in = User.query.filter_by(username=session["username"]).first()
-		if currently_in.current_room:
+		if currently_in.current_room and currently_in.current_room != chatroom_tojoin:
 			flash("You are already in a chatroom!")
 			return redirect(url_for("profile", username=username))
 		currently_in.current_room = chatroom_name
@@ -172,8 +174,7 @@ def rooms(chatroom=None):
 @app.route("/get_messages/<chatroom>")
 def get_messages(chatroom=None):
 	if chatroom:
-		#check if room was deleted
-		room = Chatroom.query.filter_by(name=chatroom).all()
+		room = Chatroom.query.get(chatroom)
 		if not room:
 			flash("Oh no! The chatroom was deleted by the owner!")
 			return url_for("profile")
@@ -183,6 +184,28 @@ def get_messages(chatroom=None):
 		for message in chat_history:
 			message_dict = {"sender":message.sender, "text":message.message, "time":message.timestamp}
 			messages.append(message_dict)
+	return jsonify(messages)
+
+@app.route("/get_new_messages/<chatroom>")
+def get_new_messages(chatroom=None):
+	if chatroom:
+		new_mrp = datetime.now()
+		#check if room was deleted
+		room = Chatroom.query.get(chatroom)
+		if not room:
+			flash("Oh no! The chatroom was deleted by the owner!")
+			return url_for("profile")
+		
+		#room = Chatroom.query.filter_by(name=chatroom).first()
+		mrp = room.most_recent_poll
+		new_logs = Chatlog.query.order_by(Chatlog.timestamp).filter(Chatlog.chatroom_name==chatroom, Chatlog.timestamp > mrp).all()
+		messages = []
+		message_dict = {}
+		for message in new_logs:
+			message_dict = {"sender":message.sender, "text":message.message, "time":message.timestamp}
+			messages.append(message_dict)
+		room.most_recent_poll = new_mrp
+		db.session.commit()
 	return jsonify(messages)
 
 @app.route("/post_message/", methods=["POST"])
