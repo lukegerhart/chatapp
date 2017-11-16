@@ -1,14 +1,20 @@
+/*
+Parse response from server into HTML for chat history
+*/
 function parseJsonResponse(jsonResponse) {
 	var displayHtml = "";
 	for (var key in jsonResponse) {
 		if (jsonResponse.hasOwnProperty(key)) {
 			displayHtml += ("<p>"+jsonResponse[key]["sender"]+ ": "+jsonResponse[key]["text"]+"</p>");
-			
 		}
 	}
 	return displayHtml;
 	
 }
+
+/*
+Get the entire history of chat messages
+*/
 function getMessages() {
 	chatHistory = document.getElementById("history");
 	var headerText = document.getElementById("header").innerHTML;
@@ -26,6 +32,7 @@ function getMessages() {
 				try {
 					var response = JSON.parse(req.responseText);
 				} catch (SyntaxError) {
+					//This response means that the room was deleted, redirect
 					window.location.replace(req.responseText);
 				}
 				chatHistory.innerHTML = parseJsonResponse(response);
@@ -37,8 +44,15 @@ function getMessages() {
 	req.send();
 	return false;
 }
+
+/*
+Set listener to load chat history when first entering a chatroom
+*/
 window.onload = getMessages;
 
+/*
+Function to send post a message to the server
+*/
 function sendMessage(e) {
 	var key = e.keyCode || e.which;
 	if (key == 13) {
@@ -60,6 +74,7 @@ function sendMessage(e) {
 					
 				} else {
 					var response = JSON.parse(req.responseText);
+					//add the message to the history on the bottom
 					var history = document.getElementById("history");
 					history.innerHTML = history.innerHTML + ("<p>"+response+": "+message+"</p>");
 					history.scrollTop = history.scrollHeight;
@@ -71,4 +86,7 @@ function sendMessage(e) {
 	}
 }
 
+/*
+Poll the server every second for updates
+*/
 window.setInterval(getMessages, 1000);
