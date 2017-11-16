@@ -21,9 +21,13 @@ function getMessages() {
 		{
 			if (req.status != 200) 
 			{
-				//error handling code here
+				
 			} else {
-				var response = JSON.parse(req.responseText);
+				try {
+					var response = JSON.parse(req.responseText);
+				} catch (SyntaxError) {
+					window.location.replace(req.responseText);
+				}
 				chatHistory.innerHTML = parseJsonResponse(response);
 				chatHistory.scrollTop = chatHistory.scrollHeight;
 			}
@@ -53,7 +57,7 @@ function sendMessage(e) {
 			{
 				if (req.status != 200) 
 				{
-					//error handling code here
+					
 				} else {
 					var response = JSON.parse(req.responseText);
 					var history = document.getElementById("history");

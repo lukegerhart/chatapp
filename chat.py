@@ -181,8 +181,10 @@ def rooms(chatroom=None):
 def get_messages(chatroom=None):
 	if chatroom:
 		#check if room was deleted
-		#room = Chatroom.query.filter_by(name=chatroom).all()
-		
+		room = Chatroom.query.filter_by(name=chatroom).all()
+		if not room:
+			flash("Oh no! The chatroom was deleted by the owner!")
+			return url_for("profile")
 		chat_history = Chatlog.query.order_by(Chatlog.timestamp).filter_by(chatroom_name=chatroom).all()
 		messages = []
 		message_dict = {}
